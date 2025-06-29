@@ -1,3 +1,5 @@
-export const PORT = 3000;
+import dotenv from 'dotenv';
+dotenv.config();
 
-export const DB_URL = 'mongodb+srv://koiralavinay:Password%40123@book-store-mern.fhuwilv.mongodb.net/books-collection?retryWrites=true&w=majority&appName=book-store-MERN';
+export const PORT = process.env.PORT;
+export const DB_URL = process.env.DB_URL;
