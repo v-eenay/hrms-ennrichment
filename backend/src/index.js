@@ -1,24 +1,32 @@
-const express = require('express');
-const app = express();
-const PORT = process.env.PORT || 3000;
+import express from 'express'
+import { connectDB } from './config/db.js'
+import bookRoutes from './routes/bookRoutes.js'
+import { PORT } from './config/config.js'
+const app = express()
 
-// Middleware
+// Middleware to parse JSON bodies
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Basic route
+// Routes
+app.use('/books', bookRoutes);
+
+// Root route
 app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to the API!' });
+  return res.status(234).send('Hello, World!');
 });
 
-// Health check route
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
+// Start the server
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+const startServer = async () => {
+  await connectDB().
+  then(() => {
+    app.listen(PORT, () => {
+      console.log('Server is running on http://localhost:${PORT}');
+    });
+  }).catch((error) => {
+    console.error('Error starting the server:', error);
+    process.exit(1);
+  })
+}
 
-module.exports = app;
+startServer();
