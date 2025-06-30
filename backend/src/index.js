@@ -1,6 +1,6 @@
 import express from "express";
 import { connectDB } from "./config/db.js";
-import bookRoutes from "./routes/bookRoutes.js";
+import employeeRoutes from "./routes/employeeRoutes.js";
 import { PORT } from "./config/config.js";
 import cors from "cors";
 // Create an Express application
@@ -18,11 +18,11 @@ app.use(
   })
 );
 // Routes
-app.use("/books", bookRoutes);
+app.use("/employees", employeeRoutes);
 
 // Root route
 app.get("/", (req, res) => {
-  return res.status(234).send("Hello, World!");
+  return res.status(200).send("Welcome to HRMS API - Human Resource Management System");
 });
 
 // Start the server
