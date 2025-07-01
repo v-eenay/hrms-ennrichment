@@ -1,7 +1,5 @@
 # HRMS - Human Resource Management System
 
-A comprehensive full-stack Human Resource Management System built with Node.js, Express, and MongoDB. This project demonstrates modern web development practices and provides a complete employee management solution for learning and educational purposes.
-
 ## 🎯 Project Overview
 
 This HRMS application provides a complete employee management system with the following capabilities:
@@ -331,26 +329,69 @@ This project is designed for educational purposes. Students are encouraged to:
 - Use it as a foundation for their own projects
 - Share and distribute modifications
 
+## 📚 Tutorials & Learning Resources
+
+This project includes comprehensive tutorials to help you understand the backend implementation:
+
+### **Core Tutorials**
+1. **[Architecture & Design Patterns](tutorials/architecture.md)** - Understanding the project structure and design decisions
+2. **[Employee Model Deep Dive](tutorials/employee-model.md)** - Mongoose schemas, validation, and relationships
+3. **[API Routes & HTTP Operations](tutorials/api-routes.md)** - RESTful API implementation and Express.js routing
+4. **[Database Operations & MongoDB](tutorials/database-operations.md)** - CRUD operations, queries, and optimization
+
+### **Learning Progression**
+For the best learning experience, follow this order:
+1. Start with **Architecture** to understand the overall structure
+2. Study the **Employee Model** to learn data modeling concepts
+3. Explore **API Routes** to understand request/response handling
+4. Deep dive into **Database Operations** for advanced MongoDB concepts
+
+### **Practical Exercises**
+Each tutorial includes:
+- Step-by-step code explanations
+- Practical examples and use cases
+- Best practices and common pitfalls
+- Hands-on exercises to reinforce learning
+- Performance optimization techniques
+
 ## 🎓 Next Steps for Students
 
-1. **Explore the Code**: Study the Employee model and API routes
-2. **Add Features**: Implement additional endpoints or validation
-3. **Build Frontend**: Create a user interface for the API
-4. **Add Authentication**: Implement user login and authorization
-5. **Deploy**: Learn to deploy the application to cloud platforms
-6. **Testing**: Write unit and integration tests
+1. **Follow the Tutorials**: Work through the tutorials in the recommended order
+2. **Explore the Code**: Study the Employee model and API routes implementation
+3. **Practice with Sample Data**: Use the provided sample data to test operations
+4. **Add Features**: Implement additional endpoints or validation rules
+5. **Build Frontend**: Create a user interface for the API (React + Tailwind planned)
+6. **Add Authentication**: Implement user login and authorization
+7. **Deploy**: Learn to deploy the application to cloud platforms
+8. **Testing**: Write unit and integration tests
+
+## 📖 Quick Reference
+
+### **Project Structure**
+```
+hrms-ennrichment/
+├── tutorials/           # Learning tutorials and guides
+├── backend/            # Node.js/Express API server
+│   ├── src/           # Source code
+│   └── sample-data/   # Sample employee data
+├── frontend/          # React frontend (in development)
+└── README.md          # This file
+```
+
+### **Key Files to Study**
+- `backend/src/models/employeeModel.js` - Data model and validation
+- `backend/src/routes/employeeRoutes.js` - API endpoints
+- `backend/src/config/db.js` - Database connection
+- `backend/sample-data/employees.json` - Sample data for testing
 
 ## 📞 Support
 
 For questions or issues:
 
-1. Check the troubleshooting section above
-2. Review the backend README for detailed setup
-3. Examine the sample data and API examples
-4. Practice with different API endpoints using Postman or curl
+1. **Start with Tutorials**: Check the comprehensive tutorials in the `tutorials/` directory
+2. **Review Documentation**: Check the backend README for detailed setup instructions
+3. **Examine Sample Data**: Use the provided sample data to understand the data structure
+4. **Practice with API**: Test different endpoints using Postman or curl
+5. **Study the Code**: Follow the tutorials while examining the actual implementation
 
 Happy coding! 🚀
-
-```
-
-```
