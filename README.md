@@ -3,7 +3,6 @@
 [![Node.js](https://img.shields.io/badge/Node.js-v18+-green.svg)](https://nodejs.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-v5+-green.svg)](https://www.mongodb.com/)
 [![Express.js](https://img.shields.io/badge/Express.js-v4+-blue.svg)](https://expressjs.com/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## 🎯 Project Overview
 
@@ -374,20 +373,25 @@ This project is designed for educational purposes. Students are encouraged to:
 This project includes comprehensive tutorials to help you understand the backend implementation:
 
 ### **Core Tutorials**
-1. **[Architecture & Design Patterns](tutorials/architecture.md)** - Understanding the project structure and design decisions
+
+1. **[Architecture &amp; Design Patterns](tutorials/architecture.md)** - Understanding the project structure and design decisions
 2. **[Employee Model Deep Dive](tutorials/employee-model.md)** - Mongoose schemas, validation, and relationships
-3. **[API Routes & HTTP Operations](tutorials/api-routes.md)** - RESTful API implementation and Express.js routing
-4. **[Database Operations & MongoDB](tutorials/database-operations.md)** - CRUD operations, queries, and optimization
+3. **[API Routes &amp; HTTP Operations](tutorials/api-routes.md)** - RESTful API implementation and Express.js routing
+4. **[Database Operations &amp; MongoDB](tutorials/database-operations.md)** - CRUD operations, queries, and optimization
 
 ### **Learning Progression**
+
 For the best learning experience, follow this order:
+
 1. Start with **Architecture** to understand the overall structure
 2. Study the **Employee Model** to learn data modeling concepts
 3. Explore **API Routes** to understand request/response handling
 4. Deep dive into **Database Operations** for advanced MongoDB concepts
 
 ### **Practical Exercises**
+
 Each tutorial includes:
+
 - Step-by-step code explanations
 - Practical examples and use cases
 - Best practices and common pitfalls
@@ -408,6 +412,7 @@ Each tutorial includes:
 ## 📖 Quick Reference
 
 ### **Project Structure**
+
 ```
 hrms-ennrichment/
 ├── tutorials/           # Learning tutorials and guides
@@ -419,6 +424,7 @@ hrms-ennrichment/
 ```
 
 ### **Key Files to Study**
+
 - `backend/src/models/employeeModel.js` - Data model and validation
 - `backend/src/routes/employeeRoutes.js` - API endpoints
 - `backend/src/config/db.js` - Database connection
