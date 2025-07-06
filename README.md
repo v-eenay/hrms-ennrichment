@@ -1,32 +1,72 @@
 # HRMS - Human Resource Management System
 
+[![Node.js](https://img.shields.io/badge/Node.js-v18+-green.svg)](https://nodejs.org/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-v5+-green.svg)](https://www.mongodb.com/)
+[![Express.js](https://img.shields.io/badge/Express.js-v4+-blue.svg)](https://expressjs.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 ## 🎯 Project Overview
 
-This HRMS application provides a complete employee management system with the following capabilities:
+A comprehensive Human Resource Management System built with the MERN stack, designed to streamline HR processes and improve organizational efficiency.
 
-- **Employee Management**: Create, read, update, and manage employee records
-- **Department Organization**: Organize employees by departments and positions
-- **Manager Hierarchy**: Track reporting relationships between employees
-- **Status Management**: Handle active/inactive employee statuses
-- **Data Validation**: Comprehensive validation for all employee data
+### ✨ Key Features
 
-### 🏗️ Architecture
+- **🔐 Authentication & Authorization** - JWT-based secure login with role-based access control
+- **👥 User Management** - Complete employee lifecycle management
+- **🏢 Department Management** - Organize employees by departments and hierarchies
+- **⏰ Attendance Tracking** - Clock in/out system with real-time monitoring
+- **🏖️ Leave Management** - Leave application, approval, and balance tracking
+- **💰 Payroll Processing** - Automated salary calculations and pay slip generation
+- **📊 Reporting & Analytics** - Comprehensive reports and dashboard insights
+- **🔒 Role-Based Access** - Admin, Manager, and Employee permission levels
 
-- **Backend**: Node.js with Express.js framework
-- **Database**: MongoDB with Mongoose ODM
-- **Frontend**: *In Development* (React planned)
-- **API**: RESTful API design with JSON responses
+### � Learning Objectives
 
-## 🎓 Learning Objectives
+This project is designed to help students master:
 
-This project is designed to help students learn:
+- **Backend Development** - RESTful API design with Express.js
+- **Database Design** - MongoDB schema design and relationships
+- **Authentication** - JWT implementation and security best practices
+- **Authorization** - Role-based access control (RBAC)
+- **Code Organization** - Clean architecture with services and utilities
+- **Error Handling** - Comprehensive error management
+- **API Documentation** - Professional API documentation practices
 
-- RESTful API development with Express.js
-- MongoDB database design and operations
-- Data validation and error handling
-- Employee management system concepts
-- Full-stack application architecture
-- Git version control and collaboration
+## 🏗️ System Architecture
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │    Backend      │    │    Database     │
+│   (React)       │◄──►│   (Express.js)  │◄──►│   (MongoDB)     │
+│                 │    │                 │    │                 │
+│ • Dashboard     │    │ • REST API      │    │ • User Data     │
+│ • Auth Pages    │    │ • JWT Auth      │    │ • Attendance    │
+│ • Management    │    │ • Middleware    │    │ • Leave Records │
+│ • Reports       │    │ • Services      │    │ • Payroll Data  │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+### 📁 Project Structure
+
+```
+hrms/
+├── backend/
+│   ├── src/
+│   │   ├── controllers/     # Request handlers
+│   │   ├── services/        # Business logic
+│   │   ├── models/          # Database schemas
+│   │   ├── routes/          # API endpoints
+│   │   ├── middleware/      # Auth, validation
+│   │   ├── utils/           # Helper functions
+│   │   ├── config/          # Configuration
+│   │   └── index.js         # App entry point
+│   ├── package.json
+│   └── .env.example
+├── frontend/                # React application (planned)
+├── docs/                    # Documentation
+├── .gitignore
+└── README.md
+```
 
 ## 📋 Prerequisites
 
