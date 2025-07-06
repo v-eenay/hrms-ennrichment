@@ -30,8 +30,7 @@ const departmentSchema = mongoose.Schema(
     }
 );
 
-// Create indexes for better performance
-departmentSchema.index({ name: 1 });
+// Create indexes for better performance (name index is automatic due to unique: true)
 departmentSchema.index({ isActive: 1 });
 
 export const Department = mongoose.model("Department", departmentSchema);

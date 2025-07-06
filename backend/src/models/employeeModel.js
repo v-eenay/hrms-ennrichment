@@ -1,61 +1,71 @@
 import { mongoose } from "mongoose";
-import bcrypt from "bcryptjs";
 
-const userSchema = mongoose.Schema(
+const employeeSchema = mongoose.Schema(
     {
-        name: {
+        employeeId: {
+            type: String,
+            required: true,
+            unique: true,
+            trim: true,
+        },
+        firstName: {
             type: String,
             required: true,
             trim: true,
-            minlength: 2,
-            maxlength: 50
+        },
+        lastName: {
+            type: String,
+            required: true,
+            trim: true,
         },
         email: {
             type: String,
             required: true,
             unique: true,
+            trim: true,
             lowercase: true,
-            match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+            match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email address'],
         },
-        password: {
+        phone: {
             type: String,
-            required: true,
-            minlength: 6
-        },
-        role: {
-            type: String,
-            enum: ['admin', 'manager', 'employee'],
-            default: 'employee'
+            trim: true,
+            match: [/^[\+]?[1-9][\d]{0,15}$/, 'Please enter a valid phone number'],
         },
         department: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Department'
-        },
-        designation: {
             type: String,
-            trim: true
+            required: true,
+            trim: true,
+        },
+        position: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        hireDate: {
+            type: Date,
+            required: true,
+            validate: {
+                validator: function(value) {
+                    return value <= new Date();
+                },
+                message: 'Hire date cannot be in the future'
+            }
         },
         salary: {
             type: Number,
-            min: 0
+            required: true,
+            min: [0, 'Salary must be a positive number'],
         },
-        profileImage: {
-            type: String
-        },
-        phoneNumber: {
+        status: {
             type: String,
-            match: /^\d{10,15}$/
+            required: true,
+            enum: ['active', 'inactive'],
+            default: 'active',
         },
-        address: {
-            type: String
-        },
-        dateOfJoining: {
-            type: Date,
-            default: Date.now
-        },
-        isActive: {
-            type: Boolean,
-            default: true
+        manager: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Employee',
+            default: null,
         }
     },
     {
@@ -63,21 +73,9 @@ const userSchema = mongoose.Schema(
     }
 );
 
-// Hash password before saving
-userSchema.pre('save', async function(next) {
-    if (!this.isModified('password')) return next();
-    this.password = await bcrypt.hash(this.password, 12);
-    next();
-});
+// Create indexes for better performance (unique fields automatically get indexes)
+employeeSchema.index({ department: 1 });
+employeeSchema.index({ status: 1 });
+employeeSchema.index({ position: 1 });
 
-// Compare password method
-userSchema.methods.comparePassword = async function(candidatePassword) {
-    return await bcrypt.compare(candidatePassword, this.password);
-};
-
-// Create indexes for better performance
-userSchema.index({ email: 1 });
-userSchema.index({ department: 1 });
-userSchema.index({ role: 1 });
-
-export const User = mongoose.model("User", userSchema);
+export const Employee = mongoose.model("Employee", employeeSchema);

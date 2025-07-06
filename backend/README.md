@@ -9,10 +9,12 @@ A comprehensive Human Resource Management System backend API built with Node.js,
 - **Database**: MongoDB with Mongoose ODM (v8.16.1)
 - **Authentication**: JWT (JSON Web Tokens)
 - **Security**: bcryptjs for password hashing
+- **API Documentation**: Swagger/OpenAPI 3.0 with interactive UI
 - **Additional Libraries**:
   - CORS for cross-origin requests
   - dotenv for environment variables
   - nodemon for development auto-restart
+  - swagger-jsdoc & swagger-ui-express for API documentation
 
 ## ✨ Features
 
@@ -56,6 +58,13 @@ A comprehensive Human Resource Management System backend API built with Node.js,
 - Goal setting and tracking
 - Performance ratings
 - Review history
+
+### 📚 Interactive API Documentation
+- Swagger/OpenAPI 3.0 documentation
+- Interactive API testing in browser
+- Comprehensive endpoint documentation
+- Real-time request/response testing
+- Authentication testing workflow
 
 ## 📋 Prerequisites
 
@@ -140,6 +149,21 @@ npm start
 ```
 
 The server will start at `http://localhost:5000`
+
+### 5. Access API Documentation
+
+Once the server is running, you can access the interactive API documentation at:
+
+- **Swagger UI**: `http://localhost:5000/api-docs`
+- **API Endpoints**: `http://localhost:5000/api/`
+- **Health Check**: `http://localhost:5000/health`
+
+The Swagger UI provides:
+- ✅ Interactive API testing
+- ✅ Complete endpoint documentation
+- ✅ Request/response examples
+- ✅ Authentication workflow testing
+- ✅ Schema validation
 
 ## 🏗️ Project Architecture
 
@@ -591,6 +615,27 @@ curl -X GET http://localhost:5000/api/auth/profile \
 
 ## 🧪 Testing
 
+### 🌟 Swagger UI Testing (Recommended)
+
+**Interactive Browser Testing** - The easiest way to test all API endpoints:
+
+1. **Start the server**: `npm run dev`
+2. **Open Swagger UI**: `http://localhost:5000/api-docs`
+3. **Test Authentication**:
+   - Register a new user via POST `/api/auth/register`
+   - Login to get JWT token via POST `/api/auth/login`
+   - Click "Authorize" button and enter: `Bearer YOUR_JWT_TOKEN`
+4. **Test All Endpoints**: Click "Try it out" on any endpoint to test it
+5. **View Real Responses**: See actual API responses with proper formatting
+
+**Swagger UI Features**:
+- ✅ **No additional setup required**
+- ✅ **Test all endpoints in one place**
+- ✅ **Built-in authentication handling**
+- ✅ **Real-time request/response testing**
+- ✅ **Comprehensive documentation**
+- ✅ **Error scenario testing**
+
 ### Manual Testing with Postman
 
 1. **Import Collection**: Create a Postman collection with all endpoints
@@ -599,6 +644,34 @@ curl -X GET http://localhost:5000/api/auth/profile \
 4. **Test CRUD Operations**: Test create, read, update, delete for each model
 5. **Test Role Permissions**: Verify role-based access control
 6. **Test Error Scenarios**: Test validation errors and unauthorized access
+
+### Testing Workflow
+
+#### 1. Authentication Testing
+```bash
+# Using Swagger UI (Recommended)
+1. Go to http://localhost:5000/api-docs
+2. Test POST /api/auth/register
+3. Test POST /api/auth/login
+4. Copy JWT token and authorize
+
+# Using curl
+curl -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"password123"}'
+```
+
+#### 2. Protected Endpoints Testing
+```bash
+# Using Swagger UI (Recommended)
+1. Ensure you're authenticated (green lock icon)
+2. Test any protected endpoint
+3. View real-time responses
+
+# Using curl
+curl -X GET http://localhost:5000/api/users \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
 
 ### Automated Testing (Future)
 
@@ -766,15 +839,24 @@ CMD ["npm", "start"]
 - [Mongoose Documentation](https://mongoosejs.com/)
 - [MongoDB Manual](https://docs.mongodb.com/)
 - [JWT Documentation](https://jwt.io/)
+- [Swagger/OpenAPI Documentation](https://swagger.io/specification/)
 
 ### Tutorials
 - [Node.js Security Best Practices](https://nodejs.org/en/docs/guides/security/)
 - [RESTful API Design](https://restfulapi.net/)
 - [MongoDB Schema Design](https://docs.mongodb.com/manual/core/data-modeling-introduction/)
+- [API Testing with Swagger](https://swagger.io/tools/swagger-ui/)
 
-### Additional Resources
+### Project-Specific Resources
 - `tutorials/models-guide.md` - Detailed model documentation
 - `tutorials/project-overview.md` - Project architecture overview
+- `tutorials/swagger-integration-guide.md` - **Swagger integration and API testing tutorial**
+
+### Quick Start Guides
+1. **API Testing**: Visit `http://localhost:5000/api-docs` for interactive testing
+2. **Authentication**: Follow the Swagger UI workflow for JWT authentication
+3. **Role Testing**: Test different user roles and permissions
+4. **Error Handling**: Test validation and error scenarios
 
 ## 🔄 Future Enhancements
 
