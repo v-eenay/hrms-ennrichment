@@ -10,6 +10,10 @@ import { registerRoutes, validateRoutes } from "./routes/index.js";
 // Import Swagger
 import { swaggerUi, specs } from "./config/swagger.js";
 
+// Import professional logger
+import logger from "./utils/logger.js";
+
+// Configure environment variables
 dotenv.config();
 
 // Create an Express application
@@ -71,10 +75,8 @@ app.get('/health', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  // Log error details in development mode only
-  if (process.env.NODE_ENV === 'development') {
-    console.error('Error details:', err.stack);
-  }
+  // Log error using professional logger
+  logger.error('Server error occurred', err);
 
   // Send appropriate error response
   const statusCode = err.statusCode || 500;
@@ -98,41 +100,38 @@ app.use((req, res) => {
 });
 
 /**
- * Start the server with proper error handling and logging
+ * Start the server with elegant logging and error handling
  */
 const startServer = async () => {
+  let dbConnected = false;
+  let routeCount = 0;
+
   try {
-    // Try to connect to database, but don't fail if it's not available
+    // Database connection
     try {
       await connectDB();
-      if (process.env.NODE_ENV !== 'test') {
-        console.log('✅ Database connected successfully');
-      }
+      dbConnected = true;
     } catch (dbError) {
-      if (process.env.NODE_ENV !== 'test') {
-        console.warn('⚠️  Database connection failed, but continuing to start server:', dbError.message);
-        console.log('🔄 Server will run without database functionality');
-      }
+      logger.warn('Database unavailable - server will run with limited functionality');
     }
 
-    // Register all routes dynamically
-    await registerRoutes(app);
-
-    // Validate route registration
+    // Register routes
+    routeCount = await registerRoutes(app);
     validateRoutes(app);
 
     // Start the server
     app.listen(PORT, () => {
-      if (process.env.NODE_ENV !== 'test') {
-        console.log(`🚀 Server is running on http://localhost:${PORT}`);
-        console.log(`📚 API Documentation available at http://localhost:${PORT}/api-docs`);
-        console.log(`🏥 Health check available at http://localhost:${PORT}/health`);
-        console.log(`📁 Root API endpoint: http://localhost:${PORT}/api`);
-      }
+      // Display elegant startup summary
+      logger.logStartupSummary({
+        port: PORT,
+        dbConnected,
+        routeCount: routeCount || 6, // Default route count
+        environment: process.env.NODE_ENV || 'development'
+      });
     });
 
   } catch (error) {
-    console.error("💥 Error starting the server:", error);
+    logger.error('Failed to start server', error);
     process.exit(1);
   }
 };

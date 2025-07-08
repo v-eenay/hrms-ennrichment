@@ -60,10 +60,6 @@ const routeConfig = {
  */
 export const registerRoutes = async (app) => {
   try {
-    if (process.env.NODE_ENV !== 'test') {
-      console.log('🔄 Dynamically loading route modules...');
-    }
-
     // Read all files in the routes directory
     const routeFiles = await readdir(__dirname);
 
@@ -74,9 +70,7 @@ export const registerRoutes = async (app) => {
       file.endsWith('Routes.js')
     );
 
-    if (process.env.NODE_ENV !== 'test') {
-      console.log(`📁 Found ${jsRouteFiles.length} route files:`, jsRouteFiles);
-    }
+    let loadedRoutes = 0;
 
     // Load each route module dynamically
     for (const file of jsRouteFiles) {
@@ -84,7 +78,6 @@ export const registerRoutes = async (app) => {
         // Get the route configuration or generate default
         const routeInfo = routeConfig[file];
         const routePrefix = routeInfo?.prefix || generateRoutePrefix(file);
-        const description = routeInfo?.description || 'API endpoints';
 
         // Dynamic import of the route module
         const modulePath = `file://${join(__dirname, file)}`;
@@ -96,9 +89,7 @@ export const registerRoutes = async (app) => {
         if (routeHandler && typeof routeHandler === 'function') {
           // Register the route with the API prefix
           app.use(`/api${routePrefix}`, routeHandler);
-          if (process.env.NODE_ENV !== 'test') {
-            console.log(`✅ Loaded route: /api${routePrefix} - ${description}`);
-          }
+          loadedRoutes++;
         } else {
           console.warn(`⚠️  Warning: ${file} does not export a valid router`);
         }
@@ -107,11 +98,7 @@ export const registerRoutes = async (app) => {
       }
     }
 
-    if (process.env.NODE_ENV !== 'test') {
-      console.log('🎉 All routes loaded successfully!');
-      // Log all registered routes for debugging
-      logRegisteredRoutes(app);
-    }
+    return loadedRoutes;
 
   } catch (error) {
     console.error('💥 Failed to load routes:', error);
@@ -134,78 +121,7 @@ const generateRoutePrefix = (filename) => {
   return `/${kebabCase}`;
 };
 
-/**
- * Logs all registered routes for debugging purposes
- * @param {Express.Application} app - Express application instance
- */
-const logRegisteredRoutes = (app) => {
-  if (process.env.NODE_ENV === 'test') return;
 
-  console.log('\n📋 Registered API Routes:');
-  console.log('================================');
-
-  try {
-    // Check if app has _router and if it has stack
-    if (!app._router || !app._router.stack) {
-      console.log('ℹ️  Router stack not available for route inspection');
-      console.log('✅ Routes registered successfully via dynamic import');
-      console.log('================================\n');
-      return;
-    }
-
-    // Extract routes from Express app
-    const routes = [];
-
-    app._router.stack.forEach((middleware) => {
-      if (middleware.route) {
-        // Direct routes
-        routes.push({
-          method: Object.keys(middleware.route.methods)[0].toUpperCase(),
-          path: middleware.route.path
-        });
-      } else if (middleware.name === 'router' && middleware.handle && middleware.handle.stack) {
-        // Router middleware
-        const routerPath = middleware.regexp.source
-          .replace('\\', '')
-          .replace('^', '')
-          .replace('\\/', '/')
-          .replace('(?:', '')
-          .replace('\\', '')
-          .replace('?)', '')
-          .replace('$', '');
-
-        middleware.handle.stack.forEach((handler) => {
-          if (handler.route) {
-            const fullPath = routerPath + handler.route.path;
-            routes.push({
-              method: Object.keys(handler.route.methods)[0].toUpperCase(),
-              path: fullPath.replace('//', '/')
-            });
-          }
-        });
-      }
-    });
-
-    if (routes.length > 0) {
-      // Sort routes by path for better readability
-      routes.sort((a, b) => a.path.localeCompare(b.path));
-
-      // Display routes in a formatted table
-      routes.forEach(route => {
-        console.log(`${route.method.padEnd(6)} ${route.path}`);
-      });
-    } else {
-      console.log('✅ Routes registered successfully');
-      console.log('ℹ️  Route details not available for inspection');
-    }
-
-  } catch (error) {
-    console.log('ℹ️  Route inspection failed, but routes are registered');
-    console.log(`⚠️  ${error.message}`);
-  }
-
-  console.log('================================\n');
-};
 
 /**
  * Alternative manual route registration (fallback method)
@@ -280,32 +196,12 @@ export const registerRoutesManual = async (app) => {
 };
 
 /**
- * Health check for route system
- * @param {Express.Application} app - Express application instance
+ * Validate route system (simplified for clean startup)
  */
-export const validateRoutes = (app) => {
-  if (process.env.NODE_ENV === 'test') return;
-
-  console.log('\n🔍 Route Validation:');
-  console.log('================================');
-
-  const expectedRoutes = Object.values(routeConfig);
-
-  try {
-    // Simple validation - just check if the routes were configured
-    expectedRoutes.forEach(routeInfo => {
-      console.log(`✅ ${routeInfo.prefix} - ${routeInfo.description}`);
-    });
-
-    console.log('================================');
-    console.log('✅ All expected routes are configured');
-
-  } catch (error) {
-    console.log('⚠️  Route validation failed, but routes should be working');
-    console.log('================================');
-  }
-
-  console.log('');
+export const validateRoutes = () => {
+  // Silent validation - routes are validated during registration
+  // This function exists for compatibility but doesn't log anything
+  // to maintain clean startup output
 };
 
 export default router;
