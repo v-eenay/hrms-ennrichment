@@ -1,13 +1,17 @@
 import mongoose from "mongoose";
 import { DB_URL} from "./config.js";
 
+/**
+ * Connect to MongoDB database
+ * @returns {Promise<boolean>} True if connection successful
+ * @throws {Error} If connection fails
+ */
 const connectDB = async () => {
   try {
     await mongoose.connect(DB_URL);
-    console.log('✅ Database connected successfully');
+    return true;
   } catch (error) {
-    console.error('❌ Database connection failed:', error.message);
-    process.exit(1);
+    throw error; // Let the caller handle the error and logging
   }
 }
 

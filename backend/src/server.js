@@ -1,18 +1,21 @@
 import express from "express";
+import path from "path";
 import { connectDB } from "./config/db.js";
 import { PORT } from "./config/config.js";
 import cors from "cors";
+import dotenv from "dotenv";
+
+// Import centralized route system
+import { registerRoutes, validateRoutes } from "./routes/index.js";
 
 // Import Swagger
 import { swaggerUi, specs } from "./config/swagger.js";
 
-// Import routes
-import authRoutes from "./routes/authRoutes.js";
-import userRoutes from "./routes/userRoutes.js";
-import departmentRoutes from "./routes/departmentRoutes.js";
-import attendanceRoutes from "./routes/attendanceRoutes.js";
-import leaveRoutes from "./routes/leaveRoutes.js";
-import payrollRoutes from "./routes/payrollRoutes.js";
+// Import professional logger
+import logger from "./utils/logger.js";
+
+// Configure environment variables
+dotenv.config();
 
 // Create an Express application
 const app = express();
@@ -29,15 +32,10 @@ app.use(
   })
 );
 
-// Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/departments", departmentRoutes);
-app.use("/api/attendance", attendanceRoutes);
-app.use("/api/leaves", leaveRoutes);
-app.use("/api/payroll", payrollRoutes);
+// Serve static files for uploads
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
-// Swagger Documentation (temporarily disabled for debugging)
+// Swagger Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
   customCss: `
     .swagger-ui .topbar { display: none }
@@ -81,29 +79,65 @@ app.get('/health', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+  // Log error using professional logger
+  logger.error('Server error occurred', err);
+
+  // Send appropriate error response
+  const statusCode = err.statusCode || 500;
+  const message = err.message || 'Internal server error';
+
+  res.status(statusCode).json({
+    success: false,
+    message,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
 });
 
-// 404 handler
+// 404 handler for undefined routes
 app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
+  res.status(404).json({
+    success: false,
+    message: 'Route not found',
+    path: req.originalUrl,
+    method: req.method
+  });
 });
 
-// Start the server
+/**
+ * Start the server with elegant logging and error handling
+ */
 const startServer = async () => {
-  await connectDB()
-    .then(() => {
-      app.listen(PORT, () => {
-        console.log(`🚀 Server is running on http://localhost:${PORT}`);
-        console.log(`📚 API Documentation available at http://localhost:${PORT}/api-docs`);
-        console.log(`🏥 Health check available at http://localhost:${PORT}/health`);
+  let dbConnected = false;
+  let routeCount = 0;
+
+  try {
+    // Database connection
+    try {
+      await connectDB();
+      dbConnected = true;
+    } catch (dbError) {
+      logger.warn('Database unavailable - server will run with limited functionality');
+    }
+
+    // Register routes
+    routeCount = await registerRoutes(app);
+    validateRoutes(app);
+
+    // Start the server
+    app.listen(PORT, () => {
+      // Display elegant startup summary
+      logger.logStartupSummary({
+        port: PORT,
+        dbConnected,
+        routeCount: routeCount || 6, // Default route count
+        environment: process.env.NODE_ENV || 'development'
       });
-    })
-    .catch((error) => {
-      console.error("Error starting the server:", error);
-      process.exit(1);
     });
+
+  } catch (error) {
+    logger.error('Failed to start server', error);
+    process.exit(1);
+  }
 };
 
 startServer();

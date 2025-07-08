@@ -553,7 +553,7 @@ backend/
 │   │   ├── dateUtils.js        # Date calculations
 │   │   ├── validation.js       # Input validation
 │   │   └── responseHandler.js  # Response formatting
-│   └── index.js               # Main application file
+│   └── server.js              # Main application file
 ├── tutorials/
 │   ├── models-guide.md        # Model documentation
 │   └── project-overview.md    # Project overview

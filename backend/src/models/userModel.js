@@ -39,8 +39,23 @@ const userSchema = mongoose.Schema(
             type: Number,
             min: 0
         },
-        profileImage: {
-            type: String
+        profilePicture: {
+            path: {
+                type: String,
+                default: null
+            },
+            url: {
+                type: String,
+                default: null
+            },
+            filename: {
+                type: String,
+                default: null
+            },
+            uploadedAt: {
+                type: Date,
+                default: null
+            }
         },
         phoneNumber: {
             type: String,
@@ -73,6 +88,31 @@ userSchema.pre('save', async function(next) {
 // Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// Method to update profile picture
+userSchema.methods.updateProfilePicture = function(pictureData) {
+    this.profilePicture = {
+        path: pictureData.path,
+        url: pictureData.url,
+        filename: pictureData.filename,
+        uploadedAt: new Date()
+    };
+};
+
+// Method to remove profile picture
+userSchema.methods.removeProfilePicture = function() {
+    this.profilePicture = {
+        path: null,
+        url: null,
+        filename: null,
+        uploadedAt: null
+    };
+};
+
+// Method to check if user has profile picture
+userSchema.methods.hasProfilePicture = function() {
+    return !!(this.profilePicture && this.profilePicture.path);
 };
 
 // Create indexes for better performance (email index is automatic due to unique: true)
