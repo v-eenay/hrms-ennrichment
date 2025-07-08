@@ -5,9 +5,13 @@ import {
     createUser,
     updateUser,
     deleteUser,
-    getUsersByDepartment
+    getUsersByDepartment,
+    uploadProfilePicture,
+    getProfilePicture,
+    deleteProfilePicture
 } from '../controllers/userController.js';
 import { protect, admin, selfOrAdmin } from '../middleware/authMiddleware.js';
+import { uploadProfilePicture as uploadMiddleware, handleUploadError, validateUploadedFile } from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
 
@@ -77,7 +81,7 @@ const router = express.Router();
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
@@ -117,6 +121,10 @@ const router = express.Router();
  *                 type: string
  *                 pattern: "^\\d{10,15}$"
  *                 example: "1234567890"
+ *               profilePicture:
+ *                 type: string
+ *                 format: binary
+ *                 description: Optional profile picture (JPEG, PNG, GIF - max 5MB)
  *     responses:
  *       201:
  *         description: User created successfully
@@ -149,7 +157,7 @@ const router = express.Router();
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/', protect, admin, getUsers);
-router.post('/', protect, admin, createUser);
+router.post('/', protect, admin, uploadMiddleware, handleUploadError, validateUploadedFile, createUser);
 
 /**
  * @swagger
@@ -349,5 +357,121 @@ router.get('/department/:departmentId', protect, getUsersByDepartment);
 router.get('/:id', protect, selfOrAdmin, getUserById);
 router.put('/:id', protect, admin, updateUser);
 router.delete('/:id', protect, admin, deleteUser);
+
+// Profile picture routes
+/**
+ * @swagger
+ * /api/users/{id}/profile-picture:
+ *   post:
+ *     summary: Upload profile picture for user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               profilePicture:
+ *                 type: string
+ *                 format: binary
+ *                 description: Profile picture file (JPEG, PNG, GIF - max 5MB)
+ *     responses:
+ *       200:
+ *         description: Profile picture uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Bad request - invalid file or validation error
+ *       404:
+ *         description: User not found
+ */
+router.post('/:id/profile-picture', protect, selfOrAdmin, uploadMiddleware, handleUploadError, validateUploadedFile, uploadProfilePicture);
+
+/**
+ * @swagger
+ * /api/users/{id}/profile-picture:
+ *   get:
+ *     summary: Get profile picture for user
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: Profile picture file
+ *         content:
+ *           image/jpeg:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *           image/png:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *           image/gif:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       404:
+ *         description: Profile picture not found
+ */
+router.get('/:id/profile-picture', getProfilePicture);
+
+/**
+ * @swagger
+ * /api/users/{id}/profile-picture:
+ *   delete:
+ *     summary: Delete profile picture for user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: Profile picture deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       404:
+ *         description: User not found
+ */
+router.delete('/:id/profile-picture', protect, selfOrAdmin, deleteProfilePicture);
 
 export default router;

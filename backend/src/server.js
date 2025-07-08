@@ -1,4 +1,5 @@
 import express from "express";
+import path from "path";
 import { connectDB } from "./config/db.js";
 import { PORT } from "./config/config.js";
 import cors from "cors";
@@ -30,6 +31,9 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// Serve static files for uploads
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Swagger Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {

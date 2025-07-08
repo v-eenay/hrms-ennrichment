@@ -1,4 +1,5 @@
 import { User } from '../models/userModel.js';
+import fileService from './fileService.js';
 
 /**
  * UserService class handles all user-related business logic
@@ -193,6 +194,88 @@ class UserService {
             .populate('department', 'name description')
             .select('-password')
             .sort({ name: 1 });
+    }
+
+    /**
+     * Upload profile picture for user
+     * @param {string} userId - User ID
+     * @param {Object} file - Uploaded file object
+     * @param {Object} req - Express request object
+     * @returns {Object} Updated user data
+     * @throws {Error} If user not found or upload fails
+     */
+    async uploadProfilePicture(userId, file, req) {
+        const user = await User.findById(userId);
+        if (!user || !user.isActive) {
+            throw new Error('User not found');
+        }
+
+        // Delete existing profile picture if it exists
+        if (user.hasProfilePicture()) {
+            await fileService.deleteProfilePicture(user.profilePicture);
+        }
+
+        // Process and save new profile picture
+        const processedFile = await fileService.processProfilePicture(file, req);
+
+        // Update user with new profile picture data
+        user.updateProfilePicture({
+            path: processedFile.original.path,
+            url: processedFile.original.url,
+            filename: processedFile.original.filename
+        });
+
+        await user.save();
+
+        return await User.findById(user._id)
+            .populate('department', 'name description')
+            .select('-password');
+    }
+
+    /**
+     * Remove profile picture for user
+     * @param {string} userId - User ID
+     * @returns {Object} Updated user data
+     * @throws {Error} If user not found
+     */
+    async removeProfilePicture(userId) {
+        const user = await User.findById(userId);
+        if (!user || !user.isActive) {
+            throw new Error('User not found');
+        }
+
+        // Delete profile picture files
+        if (user.hasProfilePicture()) {
+            await fileService.deleteProfilePicture(user.profilePicture);
+        }
+
+        // Remove profile picture data from user
+        user.removeProfilePicture();
+        await user.save();
+
+        return await User.findById(user._id)
+            .populate('department', 'name description')
+            .select('-password');
+    }
+
+    /**
+     * Get profile picture information for user
+     * @param {string} userId - User ID
+     * @param {Object} req - Express request object
+     * @returns {Object} Profile picture information
+     * @throws {Error} If user not found
+     */
+    async getProfilePictureInfo(userId, req) {
+        const user = await User.findById(userId).select('profilePicture');
+        if (!user || !user.isActive) {
+            throw new Error('User not found');
+        }
+
+        if (!user.hasProfilePicture()) {
+            return null;
+        }
+
+        return fileService.getProfilePictureInfo(user.profilePicture.path, req);
     }
 
     /**
