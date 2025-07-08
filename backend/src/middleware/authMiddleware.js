@@ -1,64 +1,110 @@
 import jwt from 'jsonwebtoken';
 import { User } from '../models/userModel.js';
+import { sendErrorResponse } from '../utils/responseHandler.js';
 
-// Protect middleware
+/**
+ * Authentication middleware to protect routes
+ * Verifies JWT token and attaches user to request object
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
 export const protect = async (req, res, next) => {
     let token;
 
+    // Check for authorization header with Bearer token
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         try {
-            // Get token from header
+            // Extract token from header
             token = req.headers.authorization.split(' ')[1];
 
             // Verify token
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            // Get user from the token
+            // Get user from the token and exclude password
             req.user = await User.findById(decoded.id).select('-password');
 
             if (!req.user) {
-                return res.status(401).json({ message: 'User not found' });
+                return sendErrorResponse(res, 401, 'User not found');
             }
 
             if (!req.user.isActive) {
-                return res.status(401).json({ message: 'User account is deactivated' });
+                return sendErrorResponse(res, 401, 'User account is deactivated');
             }
 
             next();
         } catch (error) {
-            console.error(error);
-            res.status(401).json({ message: 'Not authorized, token failed' });
-        }
-    }
+            // Handle different JWT errors
+            let message = 'Not authorized, token failed';
+            if (error.name === 'TokenExpiredError') {
+                message = 'Token expired, please login again';
+            } else if (error.name === 'JsonWebTokenError') {
+                message = 'Invalid token';
+            }
 
-    if (!token) {
-        res.status(401).json({ message: 'Not authorized, no token' });
+            return sendErrorResponse(res, 401, message);
+        }
+    } else {
+        return sendErrorResponse(res, 401, 'Not authorized, no token provided');
     }
 };
 
-// Admin middleware
+/**
+ * Admin role authorization middleware
+ * Ensures user has admin role before allowing access
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
 export const admin = (req, res, next) => {
     if (req.user && req.user.role === 'admin') {
         next();
     } else {
-        res.status(403).json({ message: 'Not authorized as admin' });
+        return sendErrorResponse(res, 403, 'Access denied. Admin role required.');
     }
 };
 
-// Manager middleware
+/**
+ * Manager role authorization middleware
+ * Ensures user has manager or admin role before allowing access
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
 export const manager = (req, res, next) => {
     if (req.user && (req.user.role === 'manager' || req.user.role === 'admin')) {
         next();
     } else {
-        res.status(403).json({ message: 'Not authorized as manager' });
+        return sendErrorResponse(res, 403, 'Access denied. Manager role or higher required.');
     }
 };
 
-// Self or admin middleware (for accessing own data)
+/**
+ * Self or admin authorization middleware
+ * Allows access if user is accessing their own data or is an admin
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
 export const selfOrAdmin = (req, res, next) => {
     if (req.user && (req.user._id.toString() === req.params.id || req.user.role === 'admin')) {
         next();
     } else {
-        res.status(403).json({ message: 'Not authorized to access this resource' });
+        return sendErrorResponse(res, 403, 'Access denied. You can only access your own data.');
+    }
+};
+
+/**
+ * HR role authorization middleware
+ * Ensures user has HR, manager, or admin role before allowing access
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
+export const hr = (req, res, next) => {
+    if (req.user && ['hr', 'manager', 'admin'].includes(req.user.role)) {
+        next();
+    } else {
+        return sendErrorResponse(res, 403, 'Access denied. HR role or higher required.');
     }
 };

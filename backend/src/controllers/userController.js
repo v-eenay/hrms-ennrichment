@@ -1,128 +1,114 @@
-import { User } from '../models/userModel.js';
+import userService from '../services/userService.js';
+import { asyncHandler, sendSuccessResponse, sendErrorResponse } from '../utils/responseHandler.js';
+import { validateRequiredFields } from '../utils/validation.js';
 
-// @desc    Get all users
-// @route   GET /api/users
-// @access  Private/Admin
-export const getUsers = async (req, res) => {
+/**
+ * @desc    Get all users with optional filtering and pagination
+ * @route   GET /api/users
+ * @access  Private/Admin
+ * @param   {Object} req - Express request object
+ * @param   {Object} res - Express response object
+ */
+export const getUsers = asyncHandler(async (req, res) => {
     try {
-        const users = await User.find({}).populate('department').select('-password');
-        res.json({
-            count: users.length,
-            users
-        });
+        const { page = 1, limit = 10, role, department } = req.query;
+        const filters = {};
+
+        if (role) filters.role = role;
+        if (department) filters.department = department;
+
+        const users = await userService.getAllUsers(filters, { page: parseInt(page), limit: parseInt(limit) });
+        sendSuccessResponse(res, 200, 'Users retrieved successfully', users);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        sendErrorResponse(res, 500, error.message);
     }
-};
+});
 
-// @desc    Get user by ID
-// @route   GET /api/users/:id
-// @access  Private/Admin
-export const getUserById = async (req, res) => {
+/**
+ * @desc    Get user by ID
+ * @route   GET /api/users/:id
+ * @access  Private/Admin or Self
+ * @param   {Object} req - Express request object
+ * @param   {Object} res - Express response object
+ */
+export const getUserById = asyncHandler(async (req, res) => {
     try {
-        const user = await User.findById(req.params.id).populate('department').select('-password');
-        if (user) {
-            res.json(user);
-        } else {
-            res.status(404).json({ message: 'User not found' });
+        const user = await userService.getUserById(req.params.id);
+        sendSuccessResponse(res, 200, 'User retrieved successfully', user);
+    } catch (error) {
+        sendErrorResponse(res, 404, error.message);
+    }
+});
+
+/**
+ * @desc    Create new user
+ * @route   POST /api/users
+ * @access  Private/Admin
+ * @param   {Object} req - Express request object
+ * @param   {Object} res - Express response object
+ */
+export const createUser = asyncHandler(async (req, res) => {
+    try {
+        // Validate required fields
+        const requiredFields = ['name', 'email', 'password'];
+        const validation = validateRequiredFields(req.body, requiredFields);
+
+        if (!validation.isValid) {
+            return sendErrorResponse(res, 400, `Missing required fields: ${validation.missingFields.join(', ')}`);
         }
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
 
-// @desc    Create new user
-// @route   POST /api/users
-// @access  Private/Admin
-export const createUser = async (req, res) => {
+        const user = await userService.createUser(req.body);
+        sendSuccessResponse(res, 201, 'User created successfully', user);
+    } catch (error) {
+        const statusCode = error.message.includes('already exists') ? 409 : 400;
+        sendErrorResponse(res, statusCode, error.message);
+    }
+});
+
+/**
+ * @desc    Update user
+ * @route   PUT /api/users/:id
+ * @access  Private/Admin
+ * @param   {Object} req - Express request object
+ * @param   {Object} res - Express response object
+ */
+export const updateUser = asyncHandler(async (req, res) => {
     try {
-        const { name, email, password, role, department, designation, salary, phoneNumber } = req.body;
-
-        // Check if user exists
-        const userExists = await User.findOne({ email });
-        if (userExists) {
-            return res.status(400).json({ message: 'User already exists' });
-        }
-
-        // Create user
-        const user = await User.create({
-            name,
-            email,
-            password,
-            role,
-            department,
-            designation,
-            salary,
-            phoneNumber
-        });
-
-        const createdUser = await User.findById(user._id).populate('department').select('-password');
-        res.status(201).json(createdUser);
+        const user = await userService.updateUser(req.params.id, req.body);
+        sendSuccessResponse(res, 200, 'User updated successfully', user);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        sendErrorResponse(res, 404, error.message);
     }
-};
+});
 
-// @desc    Update user
-// @route   PUT /api/users/:id
-// @access  Private/Admin
-export const updateUser = async (req, res) => {
+/**
+ * @desc    Delete user (soft delete by setting isActive to false)
+ * @route   DELETE /api/users/:id
+ * @access  Private/Admin
+ * @param   {Object} req - Express request object
+ * @param   {Object} res - Express response object
+ */
+export const deleteUser = asyncHandler(async (req, res) => {
     try {
-        const user = await User.findById(req.params.id);
-
-        if (user) {
-            user.name = req.body.name || user.name;
-            user.email = req.body.email || user.email;
-            user.role = req.body.role || user.role;
-            user.department = req.body.department || user.department;
-            user.designation = req.body.designation || user.designation;
-            user.salary = req.body.salary || user.salary;
-            user.phoneNumber = req.body.phoneNumber || user.phoneNumber;
-            user.address = req.body.address || user.address;
-            user.isActive = req.body.isActive !== undefined ? req.body.isActive : user.isActive;
-
-            const updatedUser = await user.save();
-            const populatedUser = await User.findById(updatedUser._id).populate('department').select('-password');
-            res.json(populatedUser);
-        } else {
-            res.status(404).json({ message: 'User not found' });
-        }
+        await userService.deleteUser(req.params.id);
+        sendSuccessResponse(res, 200, 'User deactivated successfully');
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        sendErrorResponse(res, 404, error.message);
     }
-};
+});
 
-// @desc    Delete user
-// @route   DELETE /api/users/:id
-// @access  Private/Admin
-export const deleteUser = async (req, res) => {
+/**
+ * @desc    Get users by department
+ * @route   GET /api/users/department/:departmentId
+ * @access  Private
+ * @param   {Object} req - Express request object
+ * @param   {Object} res - Express response object
+ */
+export const getUsersByDepartment = asyncHandler(async (req, res) => {
     try {
-        const user = await User.findById(req.params.id);
-
-        if (user) {
-            await User.findByIdAndDelete(req.params.id);
-            res.json({ message: 'User removed' });
-        } else {
-            res.status(404).json({ message: 'User not found' });
-        }
+        const users = await userService.getUsersByDepartment(req.params.departmentId);
+        sendSuccessResponse(res, 200, 'Department users retrieved successfully', users);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        sendErrorResponse(res, 404, error.message);
     }
-};
-
-// @desc    Get users by department
-// @route   GET /api/users/department/:departmentId
-// @access  Private
-export const getUsersByDepartment = async (req, res) => {
-    try {
-        const users = await User.find({ department: req.params.departmentId })
-            .populate('department')
-            .select('-password');
-        res.json({
-            count: users.length,
-            users
-        });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
+});

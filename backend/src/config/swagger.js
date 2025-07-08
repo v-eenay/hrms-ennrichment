@@ -9,13 +9,17 @@ const options = {
       version: '1.0.0',
       description: 'A comprehensive Human Resource Management System API built with Node.js, Express.js, and MongoDB',
       contact: {
-        name: 'Vinay Koirala',
-        email: 'koiralavinay@gmail.com'
+        name: 'HRMS Development Team',
+        email: 'support@hrms.com'
+      },
+      license: {
+        name: 'MIT',
+        url: 'https://opensource.org/licenses/MIT'
       }
     },
     servers: [
       {
-        url: 'http://localhost:3000',
+        url: 'http://localhost:5000',
         description: 'Development server'
       },
       {

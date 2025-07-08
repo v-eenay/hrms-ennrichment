@@ -2,17 +2,15 @@ import express from "express";
 import { connectDB } from "./config/db.js";
 import { PORT } from "./config/config.js";
 import cors from "cors";
+import dotenv from "dotenv";
+
+// Import centralized route system
+import { registerRoutes, validateRoutes } from "./routes/index.js";
 
 // Import Swagger
 import { swaggerUi, specs } from "./config/swagger.js";
 
-// Import routes
-import authRoutes from "./routes/authRoutes.js";
-import userRoutes from "./routes/userRoutes.js";
-import departmentRoutes from "./routes/departmentRoutes.js";
-import attendanceRoutes from "./routes/attendanceRoutes.js";
-import leaveRoutes from "./routes/leaveRoutes.js";
-import payrollRoutes from "./routes/payrollRoutes.js";
+dotenv.config();
 
 // Create an Express application
 const app = express();
@@ -29,15 +27,7 @@ app.use(
   })
 );
 
-// Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/departments", departmentRoutes);
-app.use("/api/attendance", attendanceRoutes);
-app.use("/api/leaves", leaveRoutes);
-app.use("/api/payroll", payrollRoutes);
-
-// Swagger Documentation (temporarily disabled for debugging)
+// Swagger Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
   customCss: `
     .swagger-ui .topbar { display: none }
@@ -81,29 +71,70 @@ app.get('/health', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+  // Log error details in development mode only
+  if (process.env.NODE_ENV === 'development') {
+    console.error('Error details:', err.stack);
+  }
+
+  // Send appropriate error response
+  const statusCode = err.statusCode || 500;
+  const message = err.message || 'Internal server error';
+
+  res.status(statusCode).json({
+    success: false,
+    message,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
 });
 
-// 404 handler
+// 404 handler for undefined routes
 app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
+  res.status(404).json({
+    success: false,
+    message: 'Route not found',
+    path: req.originalUrl,
+    method: req.method
+  });
 });
 
-// Start the server
+/**
+ * Start the server with proper error handling and logging
+ */
 const startServer = async () => {
-  await connectDB()
-    .then(() => {
-      app.listen(PORT, () => {
+  try {
+    // Try to connect to database, but don't fail if it's not available
+    try {
+      await connectDB();
+      if (process.env.NODE_ENV !== 'test') {
+        console.log('✅ Database connected successfully');
+      }
+    } catch (dbError) {
+      if (process.env.NODE_ENV !== 'test') {
+        console.warn('⚠️  Database connection failed, but continuing to start server:', dbError.message);
+        console.log('🔄 Server will run without database functionality');
+      }
+    }
+
+    // Register all routes dynamically
+    await registerRoutes(app);
+
+    // Validate route registration
+    validateRoutes(app);
+
+    // Start the server
+    app.listen(PORT, () => {
+      if (process.env.NODE_ENV !== 'test') {
         console.log(`🚀 Server is running on http://localhost:${PORT}`);
         console.log(`📚 API Documentation available at http://localhost:${PORT}/api-docs`);
         console.log(`🏥 Health check available at http://localhost:${PORT}/health`);
-      });
-    })
-    .catch((error) => {
-      console.error("Error starting the server:", error);
-      process.exit(1);
+        console.log(`📁 Root API endpoint: http://localhost:${PORT}/api`);
+      }
     });
+
+  } catch (error) {
+    console.error("💥 Error starting the server:", error);
+    process.exit(1);
+  }
 };
 
 startServer();

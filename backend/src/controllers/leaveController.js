@@ -1,179 +1,133 @@
-import { Leave } from '../models/leaveModel.js';
+import leaveService from '../services/leaveService.js';
+import { asyncHandler, sendSuccessResponse, sendErrorResponse } from '../utils/responseHandler.js';
+import { validateRequiredFields } from '../utils/validation.js';
 
-// @desc    Apply for leave
-// @route   POST /api/leaves
-// @access  Private
-export const applyLeave = async (req, res) => {
+/**
+ * @desc    Apply for leave
+ * @route   POST /api/leaves
+ * @access  Private
+ * @param   {Object} req - Express request object
+ * @param   {Object} res - Express response object
+ */
+export const applyLeave = asyncHandler(async (req, res) => {
     try {
-        const { type, dateFrom, dateTo, reason } = req.body;
-        const userId = req.user.id;
+        // Validate required fields
+        const requiredFields = ['type', 'dateFrom', 'dateTo', 'reason'];
+        const validation = validateRequiredFields(req.body, requiredFields);
 
-        // Calculate total days
-        const startDate = new Date(dateFrom);
-        const endDate = new Date(dateTo);
-        const timeDiff = endDate.getTime() - startDate.getTime();
-        const totalDays = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
+        if (!validation.isValid) {
+            return sendErrorResponse(res, 400, `Missing required fields: ${validation.missingFields.join(', ')}`);
+        }
 
-        const leave = await Leave.create({
-            userId,
-            type,
-            dateFrom: startDate,
-            dateTo: endDate,
-            totalDays,
-            reason
-        });
-
-        const populatedLeave = await Leave.findById(leave._id).populate('userId', 'name email');
-        res.status(201).json(populatedLeave);
+        const leave = await leaveService.applyLeave(req.user.id, req.body);
+        sendSuccessResponse(res, 201, 'Leave application submitted successfully', leave);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        sendErrorResponse(res, 400, error.message);
     }
-};
+});
 
-// @desc    Get all leaves
-// @route   GET /api/leaves
-// @access  Private/Admin
-export const getLeaves = async (req, res) => {
+/**
+ * @desc    Get all leaves with filtering options
+ * @route   GET /api/leaves
+ * @access  Private/Admin
+ * @param   {Object} req - Express request object
+ * @param   {Object} res - Express response object
+ */
+export const getLeaves = asyncHandler(async (req, res) => {
     try {
-        const { status, type, userId } = req.query;
-        
-        let query = {};
-        if (status) query.status = status;
-        if (type) query.type = type;
-        if (userId) query.userId = userId;
+        const { status, type, userId, page = 1, limit = 10 } = req.query;
+        const filters = { status, type, userId };
+        const pagination = { page: parseInt(page), limit: parseInt(limit) };
 
-        const leaves = await Leave.find(query)
-            .populate('userId', 'name email department')
-            .populate('approvedBy', 'name email')
-            .sort({ createdAt: -1 });
-
-        res.json({
-            count: leaves.length,
-            leaves
-        });
+        const leaves = await leaveService.getAllLeaves(filters, pagination);
+        sendSuccessResponse(res, 200, 'Leaves retrieved successfully', leaves);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        sendErrorResponse(res, 500, error.message);
     }
-};
+});
 
-// @desc    Get user leaves
-// @route   GET /api/leaves/user/:userId
-// @access  Private
-export const getUserLeaves = async (req, res) => {
+/**
+ * @desc    Get user leaves
+ * @route   GET /api/leaves/user/:userId
+ * @access  Private
+ * @param   {Object} req - Express request object
+ * @param   {Object} res - Express response object
+ */
+export const getUserLeaves = asyncHandler(async (req, res) => {
     try {
         const { userId } = req.params;
         const { status, type } = req.query;
+        const filters = { status, type };
 
-        let query = { userId };
-        if (status) query.status = status;
-        if (type) query.type = type;
-
-        const leaves = await Leave.find(query)
-            .populate('userId', 'name email')
-            .populate('approvedBy', 'name email')
-            .sort({ createdAt: -1 });
-
-        res.json({
-            count: leaves.length,
-            leaves
-        });
+        const leaves = await leaveService.getUserLeaves(userId, filters);
+        sendSuccessResponse(res, 200, 'User leaves retrieved successfully', leaves);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        sendErrorResponse(res, 500, error.message);
     }
-};
+});
 
-// @desc    Get leave by ID
-// @route   GET /api/leaves/:id
-// @access  Private
-export const getLeaveById = async (req, res) => {
+/**
+ * @desc    Get leave by ID
+ * @route   GET /api/leaves/:id
+ * @access  Private
+ * @param   {Object} req - Express request object
+ * @param   {Object} res - Express response object
+ */
+export const getLeaveById = asyncHandler(async (req, res) => {
     try {
-        const leave = await Leave.findById(req.params.id)
-            .populate('userId', 'name email department')
-            .populate('approvedBy', 'name email');
-
-        if (leave) {
-            res.json(leave);
-        } else {
-            res.status(404).json({ message: 'Leave not found' });
-        }
+        const leave = await leaveService.getLeaveById(req.params.id);
+        sendSuccessResponse(res, 200, 'Leave retrieved successfully', leave);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        sendErrorResponse(res, 404, error.message);
     }
-};
+});
 
-// @desc    Approve leave
-// @route   PUT /api/leaves/:id/approve
-// @access  Private/Manager
-export const approveLeave = async (req, res) => {
+/**
+ * @desc    Approve leave
+ * @route   PUT /api/leaves/:id/approve
+ * @access  Private/Manager
+ * @param   {Object} req - Express request object
+ * @param   {Object} res - Express response object
+ */
+export const approveLeave = asyncHandler(async (req, res) => {
     try {
-        const leave = await Leave.findById(req.params.id);
-
-        if (leave) {
-            leave.status = 'approved';
-            leave.approvedBy = req.user.id;
-            leave.processedAt = new Date();
-
-            const updatedLeave = await leave.save();
-            const populatedLeave = await Leave.findById(updatedLeave._id)
-                .populate('userId', 'name email')
-                .populate('approvedBy', 'name email');
-
-            res.json(populatedLeave);
-        } else {
-            res.status(404).json({ message: 'Leave not found' });
-        }
+        const leave = await leaveService.approveLeave(req.params.id, req.user.id);
+        sendSuccessResponse(res, 200, 'Leave approved successfully', leave);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        sendErrorResponse(res, 404, error.message);
     }
-};
+});
 
-// @desc    Reject leave
-// @route   PUT /api/leaves/:id/reject
-// @access  Private/Manager
-export const rejectLeave = async (req, res) => {
+/**
+ * @desc    Reject leave
+ * @route   PUT /api/leaves/:id/reject
+ * @access  Private/Manager
+ * @param   {Object} req - Express request object
+ * @param   {Object} res - Express response object
+ */
+export const rejectLeave = asyncHandler(async (req, res) => {
     try {
         const { rejectionReason } = req.body;
-        const leave = await Leave.findById(req.params.id);
-
-        if (leave) {
-            leave.status = 'rejected';
-            leave.approvedBy = req.user.id;
-            leave.rejectionReason = rejectionReason;
-            leave.processedAt = new Date();
-
-            const updatedLeave = await leave.save();
-            const populatedLeave = await Leave.findById(updatedLeave._id)
-                .populate('userId', 'name email')
-                .populate('approvedBy', 'name email');
-
-            res.json(populatedLeave);
-        } else {
-            res.status(404).json({ message: 'Leave not found' });
-        }
+        const leave = await leaveService.rejectLeave(req.params.id, req.user.id, rejectionReason);
+        sendSuccessResponse(res, 200, 'Leave rejected successfully', leave);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        sendErrorResponse(res, 404, error.message);
     }
-};
+});
 
-// @desc    Cancel leave
-// @route   DELETE /api/leaves/:id
-// @access  Private
-export const cancelLeave = async (req, res) => {
+/**
+ * @desc    Cancel leave
+ * @route   DELETE /api/leaves/:id
+ * @access  Private
+ * @param   {Object} req - Express request object
+ * @param   {Object} res - Express response object
+ */
+export const cancelLeave = asyncHandler(async (req, res) => {
     try {
-        const leave = await Leave.findById(req.params.id);
-
-        if (leave) {
-            // Only allow cancellation if leave is pending or by admin
-            if (leave.status === 'pending' || req.user.role === 'admin') {
-                await Leave.findByIdAndDelete(req.params.id);
-                res.json({ message: 'Leave cancelled' });
-            } else {
-                res.status(400).json({ message: 'Cannot cancel approved/rejected leave' });
-            }
-        } else {
-            res.status(404).json({ message: 'Leave not found' });
-        }
+        const result = await leaveService.cancelLeave(req.params.id, req.user);
+        sendSuccessResponse(res, 200, result.message);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        const statusCode = error.message.includes('not found') ? 404 : 400;
+        sendErrorResponse(res, statusCode, error.message);
     }
-};
+});

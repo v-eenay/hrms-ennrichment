@@ -1,103 +1,94 @@
-import { Department } from '../models/departmentModel.js';
+import departmentService from '../services/departmentService.js';
+import { asyncHandler, sendSuccessResponse, sendErrorResponse } from '../utils/responseHandler.js';
+import { validateRequiredFields } from '../utils/validation.js';
 
-// @desc    Get all departments
-// @route   GET /api/departments
-// @access  Private
-export const getDepartments = async (req, res) => {
+/**
+ * @desc    Get all departments
+ * @route   GET /api/departments
+ * @access  Private
+ * @param   {Object} req - Express request object
+ * @param   {Object} res - Express response object
+ */
+export const getDepartments = asyncHandler(async (req, res) => {
     try {
-        const departments = await Department.find({}).populate('head', 'name email');
-        res.json({
-            count: departments.length,
-            departments
-        });
+        const departments = await departmentService.getAllDepartments();
+        sendSuccessResponse(res, 200, 'Departments retrieved successfully', departments);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        sendErrorResponse(res, 500, error.message);
     }
-};
+});
 
-// @desc    Get department by ID
-// @route   GET /api/departments/:id
-// @access  Private
-export const getDepartmentById = async (req, res) => {
+/**
+ * @desc    Get department by ID
+ * @route   GET /api/departments/:id
+ * @access  Private
+ * @param   {Object} req - Express request object
+ * @param   {Object} res - Express response object
+ */
+export const getDepartmentById = asyncHandler(async (req, res) => {
     try {
-        const department = await Department.findById(req.params.id).populate('head', 'name email');
-        if (department) {
-            res.json(department);
-        } else {
-            res.status(404).json({ message: 'Department not found' });
+        const department = await departmentService.getDepartmentById(req.params.id);
+        sendSuccessResponse(res, 200, 'Department retrieved successfully', department);
+    } catch (error) {
+        sendErrorResponse(res, 404, error.message);
+    }
+});
+
+/**
+ * @desc    Create new department
+ * @route   POST /api/departments
+ * @access  Private/Admin
+ * @param   {Object} req - Express request object
+ * @param   {Object} res - Express response object
+ */
+export const createDepartment = asyncHandler(async (req, res) => {
+    try {
+        // Validate required fields
+        const requiredFields = ['name'];
+        const validation = validateRequiredFields(req.body, requiredFields);
+
+        if (!validation.isValid) {
+            return sendErrorResponse(res, 400, `Missing required fields: ${validation.missingFields.join(', ')}`);
         }
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
 
-// @desc    Create new department
-// @route   POST /api/departments
-// @access  Private/Admin
-export const createDepartment = async (req, res) => {
+        const department = await departmentService.createDepartment(req.body);
+        sendSuccessResponse(res, 201, 'Department created successfully', department);
+    } catch (error) {
+        const statusCode = error.message.includes('already exists') ? 409 : 400;
+        sendErrorResponse(res, statusCode, error.message);
+    }
+});
+
+/**
+ * @desc    Update department
+ * @route   PUT /api/departments/:id
+ * @access  Private/Admin
+ * @param   {Object} req - Express request object
+ * @param   {Object} res - Express response object
+ */
+export const updateDepartment = asyncHandler(async (req, res) => {
     try {
-        const { name, description, head, budget } = req.body;
-
-        // Check if department exists
-        const departmentExists = await Department.findOne({ name });
-        if (departmentExists) {
-            return res.status(400).json({ message: 'Department already exists' });
-        }
-
-        // Create department
-        const department = await Department.create({
-            name,
-            description,
-            head,
-            budget
-        });
-
-        const createdDepartment = await Department.findById(department._id).populate('head', 'name email');
-        res.status(201).json(createdDepartment);
+        const department = await departmentService.updateDepartment(req.params.id, req.body);
+        sendSuccessResponse(res, 200, 'Department updated successfully', department);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        const statusCode = error.message.includes('not found') ? 404 : 400;
+        sendErrorResponse(res, statusCode, error.message);
     }
-};
+});
 
-// @desc    Update department
-// @route   PUT /api/departments/:id
-// @access  Private/Admin
-export const updateDepartment = async (req, res) => {
+/**
+ * @desc    Delete department (soft delete)
+ * @route   DELETE /api/departments/:id
+ * @access  Private/Admin
+ * @param   {Object} req - Express request object
+ * @param   {Object} res - Express response object
+ */
+export const deleteDepartment = asyncHandler(async (req, res) => {
     try {
-        const department = await Department.findById(req.params.id);
-
-        if (department) {
-            department.name = req.body.name || department.name;
-            department.description = req.body.description || department.description;
-            department.head = req.body.head || department.head;
-            department.budget = req.body.budget || department.budget;
-            department.isActive = req.body.isActive !== undefined ? req.body.isActive : department.isActive;
-
-            const updatedDepartment = await department.save();
-            const populatedDepartment = await Department.findById(updatedDepartment._id).populate('head', 'name email');
-            res.json(populatedDepartment);
-        } else {
-            res.status(404).json({ message: 'Department not found' });
-        }
+        const result = await departmentService.deleteDepartment(req.params.id);
+        sendSuccessResponse(res, 200, result.message);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        const statusCode = error.message.includes('not found') ? 404 : 400;
+        sendErrorResponse(res, statusCode, error.message);
     }
-};
-
-// @desc    Delete department
-// @route   DELETE /api/departments/:id
-// @access  Private/Admin
-export const deleteDepartment = async (req, res) => {
-    try {
-        const department = await Department.findById(req.params.id);
-
-        if (department) {
-            await Department.findByIdAndDelete(req.params.id);
-            res.json({ message: 'Department removed' });
-        } else {
-            res.status(404).json({ message: 'Department not found' });
-        }
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
+});
