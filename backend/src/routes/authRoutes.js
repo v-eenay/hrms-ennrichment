@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, login, getMe, updateProfile } from '../controllers/authController.js';
+import { register, login, getMe, updateProfile, logout, getAuthStatus } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -265,5 +265,96 @@ router.get('/me', protect, getMe);
  *               $ref: '#/components/schemas/Error'
  */
 router.put('/profile', protect, updateProfile);
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout user and clear authentication cookie
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Success'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         message:
+ *                           type: string
+ *                           example: "Authentication cookie cleared"
+ *                         cookieCleared:
+ *                           type: boolean
+ *                           example: true
+ *       401:
+ *         description: Unauthorized - invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/logout', protect, logout);
+
+/**
+ * @swagger
+ * /api/auth/status:
+ *   get:
+ *     summary: Check authentication status and get cookie information
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Authentication status retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Success'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         authenticated:
+ *                           type: boolean
+ *                           example: true
+ *                         user:
+ *                           $ref: '#/components/schemas/User'
+ *                         cookieInfo:
+ *                           type: object
+ *                           properties:
+ *                             environment:
+ *                               type: string
+ *                               example: "development"
+ *                             httpOnly:
+ *                               type: boolean
+ *                               example: true
+ *                             secure:
+ *                               type: boolean
+ *                               example: false
+ *                             sameSite:
+ *                               type: string
+ *                               example: "lax"
+ *                             maxAgeDays:
+ *                               type: number
+ *                               example: 7
+ *       401:
+ *         description: Unauthorized - invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get('/status', protect, getAuthStatus);
 
 export default router;

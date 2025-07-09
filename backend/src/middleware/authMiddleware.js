@@ -4,7 +4,8 @@ import { sendErrorResponse } from '../utils/responseHandler.js';
 
 /**
  * Authentication middleware to protect routes
- * Verifies JWT token and attaches user to request object
+ * Verifies JWT token from cookies or Authorization header and attaches user to request object
+ * Supports both cookie-based and header-based authentication for backward compatibility
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
@@ -12,40 +13,45 @@ import { sendErrorResponse } from '../utils/responseHandler.js';
 export const protect = async (req, res, next) => {
     let token;
 
-    // Check for authorization header with Bearer token
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-        try {
-            // Extract token from header
-            token = req.headers.authorization.split(' ')[1];
+    // First, check for JWT token in HTTP-only cookie
+    if (req.cookies && req.cookies.jwt) {
+        token = req.cookies.jwt;
+    }
+    // Fallback to Authorization header with Bearer token for backward compatibility
+    else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        token = req.headers.authorization.split(' ')[1];
+    }
 
-            // Verify token
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-            // Get user from the token and exclude password
-            req.user = await User.findById(decoded.id).select('-password');
-
-            if (!req.user) {
-                return sendErrorResponse(res, 401, 'User not found');
-            }
-
-            if (!req.user.isActive) {
-                return sendErrorResponse(res, 401, 'User account is deactivated');
-            }
-
-            next();
-        } catch (error) {
-            // Handle different JWT errors
-            let message = 'Not authorized, token failed';
-            if (error.name === 'TokenExpiredError') {
-                message = 'Token expired, please login again';
-            } else if (error.name === 'JsonWebTokenError') {
-                message = 'Invalid token';
-            }
-
-            return sendErrorResponse(res, 401, message);
-        }
-    } else {
+    if (!token) {
         return sendErrorResponse(res, 401, 'Not authorized, no token provided');
+    }
+
+    try {
+        // Verify token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        // Get user from the token and exclude password
+        req.user = await User.findById(decoded.id).select('-password');
+
+        if (!req.user) {
+            return sendErrorResponse(res, 401, 'User not found');
+        }
+
+        if (!req.user.isActive) {
+            return sendErrorResponse(res, 401, 'User account is deactivated');
+        }
+
+        next();
+    } catch (error) {
+        // Handle different JWT errors
+        let message = 'Not authorized, token failed';
+        if (error.name === 'TokenExpiredError') {
+            message = 'Token expired, please login again';
+        } else if (error.name === 'JsonWebTokenError') {
+            message = 'Invalid token';
+        }
+
+        return sendErrorResponse(res, 401, message);
     }
 };
 

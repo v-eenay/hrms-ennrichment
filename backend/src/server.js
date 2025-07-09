@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import cookieParser from "cookie-parser";
 import { connectDB } from "./config/db.js";
 import { PORT } from "./config/config.js";
 import cors from "cors";
@@ -23,12 +24,16 @@ const app = express();
 // Middleware to parse JSON bodies
 app.use(express.json());
 
+// Middleware to parse cookies
+app.use(cookieParser());
+
 // Middleware to handle Cross-Origin Resource Sharing (CORS)
 app.use(
   cors({
     origin: "http://localhost:3000",
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,  // Allow cookies to be sent with requests
   })
 );
 

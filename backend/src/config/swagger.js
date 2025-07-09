@@ -59,7 +59,13 @@ const options = {
           type: 'http',
           scheme: 'bearer',
           bearerFormat: 'JWT',
-          description: 'Enter JWT token'
+          description: 'Enter JWT token in Authorization header'
+        },
+        cookieAuth: {
+          type: 'apiKey',
+          in: 'cookie',
+          name: 'jwt',
+          description: 'JWT token stored in HTTP-only cookie'
         }
       },
       schemas: {
@@ -469,6 +475,36 @@ const options = {
                 token: {
                   type: 'string',
                   example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                },
+                cookieSet: {
+                  type: 'boolean',
+                  example: true,
+                  description: 'Indicates if JWT cookie was set'
+                },
+                cookieInfo: {
+                  type: 'object',
+                  properties: {
+                    environment: {
+                      type: 'string',
+                      example: 'development'
+                    },
+                    httpOnly: {
+                      type: 'boolean',
+                      example: true
+                    },
+                    secure: {
+                      type: 'boolean',
+                      example: false
+                    },
+                    sameSite: {
+                      type: 'string',
+                      example: 'lax'
+                    },
+                    maxAgeDays: {
+                      type: 'number',
+                      example: 7
+                    }
+                  }
                 }
               }
             }
